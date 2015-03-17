@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 2.8)
 
 project(pceas)
 
+enable_testing()
+
 # Force build type to Debug if none was specified.
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
@@ -22,6 +24,7 @@ set(ARCHIVE_OUTPUT_PATH    "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 set(PROJECT_NAME pceas)
 
 set( pceas_SRC
+    array.c
     assemble.c
     code.c
     command.c
@@ -47,3 +50,5 @@ configure_file(
 )
 
 add_executable( ${PROJECT_NAME} ${pceas_SRC} )
+
+add_subdirectory(tests)
