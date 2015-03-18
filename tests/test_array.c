@@ -128,6 +128,51 @@ START_TEST(test_array_push_front)
 }
 END_TEST
 
+START_TEST(test_array_insert)
+{
+    array_t *array, *tmp;
+    uint8_t src[4][6] = 
+    {
+        { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab },
+        { 0xcd, 0xef, 0xf9, 0x87, 0x65, 0x43 },
+        { 0x21, 0x00, 0x0a, 0x1b, 0x2c, 0x3d },
+        { 0x4e, 0x5f, 0x6a, 0x7b, 0x8c, 0x9d }
+    };
+    size_t index[4] = 
+    {
+        0, 3, 2, 1
+    };
+    uint8_t *data;
+    int i;
+    
+    array = array_new(sizeof(src[0]), 0);
+    fail_if(NULL == array, "Could not allocate array");
+    
+    for(i=0; i<2; i++)
+    {
+        size_t j;
+
+        array = array_push_back(array, src[i]);
+        fail_if(NULL  == array, "NULL pointer returned");
+    }
+    
+    for(; i<4; i++)
+    {
+        tmp = array_insert(array, 1, src[i]);
+        fail_if(NULL  == tmp, "NULL pointer returned");
+        fail_if((i+1) != array_size(tmp), "Invalid size");
+        array = tmp;
+    }
+    
+    for(i=0; i<4; i++)
+    {
+        fail_if(memcmp(array_at(array, i), src[index[i]], sizeof(src[index[i]])), "Invalid data at index %d", i);
+    }
+    
+    array_delete(array);
+}
+END_TEST
+
 START_TEST(test_array_pop_back)
 {
     array_t *array, *tmp;
@@ -160,7 +205,7 @@ START_TEST(test_array_pop_back)
         if(array_size(array))
         {
             fail_if(NULL == data, "Empty array");
-            fail_if(memcmp(data, src[i-1], sizeof(src[i-1])), "Invalid data %d", i-1);
+            fail_if(memcmp(data, src[i-1], sizeof(src[i-1])), "Invalid data");
         }
         else
         {
@@ -172,15 +217,102 @@ START_TEST(test_array_pop_back)
 }
 END_TEST
 
+START_TEST(test_array_pop_front)
+{
+    array_t *array, *tmp;
+    uint8_t src[4][6] = 
+    {
+        { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab },
+        { 0xcd, 0xef, 0xf9, 0x87, 0x65, 0x43 },
+        { 0x21, 0x00, 0x0a, 0x1b, 0x2c, 0x3d },
+        { 0x4e, 0x5f, 0x6a, 0x7b, 0x8c, 0x9d }
+    };
+    uint8_t *data;
+    size_t i, j;
+    
+    array = array_new(sizeof(src[0]), 0);
+    fail_if(NULL == array, "Could not allocate array");
+    
+    for(i=0; i<4; i++)
+    {
+        array = array_push_back(array, src[i]);
+        fail_if(NULL  == array, "Push back failed");
+    }
+    
+    i = array_size(array);
+    j = 0;
+    do
+    {
+        array_pop_front(array);
+        --i; ++j;
+        fail_if(i != array_size(array), "Invalid size");
+        data = array_front(array);
+        if(array_size(array))
+        {
+            fail_if(NULL == data, "Empty array");
+            fail_if(memcmp(data, src[j], sizeof(src[j])), "Invalid data");
+        }
+        else
+        {
+            fail_unless(NULL == data, "The array should be empty at this point");
+        }
+    }while(array_size(array));
+    
+    array_delete(array);
+}
+END_TEST
+
+START_TEST(test_array_remove)
+{
+    array_t *array;
+    uint8_t src[5][6] = 
+    {
+        { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab },
+        { 0xcd, 0xef, 0xf9, 0x87, 0x65, 0x43 },
+        { 0x21, 0x00, 0x0a, 0x1b, 0x2c, 0x3d },
+        { 0x4e, 0x5f, 0x6a, 0x7b, 0x8c, 0x9d },
+        { 0xae, 0xaf, 0xb0, 0xb1, 0xb2, 0xb3 }
+    };
+    size_t index[3] = { 0, 2, 4 };
+    uint8_t *data;
+    size_t i;
+    
+    array = array_new(sizeof(src[0]), 0);
+    fail_if(NULL == array, "Could not allocate array");
+    
+    for(i=0; i<5; i++)
+    {
+        array = array_push_back(array, src[i]);
+        fail_if(NULL  == array, "Push back failed");
+    }
+    
+    array_remove(array, 3);
+    fail_if(4 != array_size(array), "Invalid array size");
+    
+    array_remove(array, 1);
+    fail_if(3 != array_size(array), "Invalid array size");
+    
+    for(i=0; i<3; i++)
+    {
+        fail_if(memcmp(array_at(array, i), src[index[i]], sizeof(src[0])), "Invalid data at index %d", i);
+    }
+    
+    array_delete(array);
+}
+END_TEST
+
 Suite* array_suite()
 {
-    Suite *suite = suite_create("pceas_array");
+    Suite *suite = suite_create("pceas");
     TCase *tcase = tcase_create("test_array");
     tcase_add_test(tcase, test_array_new);
     tcase_add_test(tcase, test_array_push_back);
     tcase_add_test(tcase, test_array_push_back_realloc);
     tcase_add_test(tcase, test_array_push_front);
+    tcase_add_test(tcase, test_array_insert);
     tcase_add_test(tcase, test_array_pop_back);
+    tcase_add_test(tcase, test_array_pop_front);
+    tcase_add_test(tcase, test_array_remove);
     suite_add_tcase(suite, tcase);
     return suite;
 }

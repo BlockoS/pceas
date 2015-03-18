@@ -60,6 +60,15 @@ array_t* array_push_front(array_t *array, void* element);
 array_t *array_insert(array_t *array, size_t index, void* element);
 
 /**
+ * Returns a pointer to the element at the specified index.
+ * @param [in] array Array.
+ * @param [in] index Element index.
+ * @return A pointer to the element at the specified index.
+ *         NULL if the index is out of array range.
+ */
+void* array_at(array_t* array, size_t index);
+
+/**
  * Returns a pointer to the first element of the array.
  */
 void* array_front(array_t *array);
@@ -109,15 +118,5 @@ size_t array_capacity(array_t* array);
  * Returns a pointer to the array buffer.
  */
 void* array_data(array_t* array);
-
-/**
- * Returns a pointer to the element at the specified index.
- * @param [in] array Array.
- * @param [in] index Element index.
- * @return A pointer to the element at the specified index.
- *         NULL if the index is out of array range.
- */
-void* array_at(array_t* array, size_t index);
-
 
 #endif /* PCEAS_ARRAY_H */

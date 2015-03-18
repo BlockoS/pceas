@@ -173,11 +173,28 @@ array_t *array_insert(array_t *array, size_t index, void* element)
 }
 
 /**
+ * Returns a pointer to the element at the specified index.
+ * @param [in] array Array.
+ * @param [in] index Element index.
+ * @return A pointer to the element at the specified index.
+ *         NULL if the index is out of array range.
+ */
+void* array_at(array_t* array, size_t index)
+{
+    array_impl_t *impl = _array_impl(array);
+    if(index >= impl->element_count)
+    {
+        return NULL;
+    }
+    return _array_data(impl, index);
+}
+
+/**
  * Returns a pointer to the first element of the array.
  */
 void* array_front(array_t *array)
 {
-    return _array_data(_array_impl(array), 0);
+    return array_at(array, 0);
 }
 
 /**
@@ -186,14 +203,11 @@ void* array_front(array_t *array)
 void* array_back(array_t *array)
 {
     array_impl_t *impl = _array_impl(array);
-    if(impl->element_count)
-    {
-        return _array_data(impl, impl->element_count-1);
-    }
-    else
+    if(0 == impl->element_count)
     {
         return NULL;
     }
+    return _array_data(impl, impl->element_count-1);
 }
 
 /**
@@ -270,21 +284,3 @@ void* array_data(array_t* array)
 {
     return _array_data(_array_impl(array), 0);
 }
-
-/**
- * Returns a pointer to the element at the specified index.
- * @param [in] array Array.
- * @param [in] index Element index.
- * @return A pointer to the element at the specified index.
- *         NULL if the index is out of array range.
- */
-void* array_at(array_t* array, size_t index)
-{
-    array_impl_t *impl = _array_impl(array);
-    if(index >= impl->element_count)
-    {
-        return NULL;
-    }
-    return _array_data(impl, index);
-}
-
