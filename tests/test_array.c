@@ -88,6 +88,90 @@ START_TEST(test_array_push_back_realloc)
 }
 END_TEST
 
+START_TEST(test_array_push_front)
+{
+    array_t *array, *tmp;
+    uint8_t src[4][6] = 
+    {
+        { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab },
+        { 0xcd, 0xef, 0xf9, 0x87, 0x65, 0x43 },
+        { 0x21, 0x00, 0x0a, 0x1b, 0x2c, 0x3d },
+        { 0x4e, 0x5f, 0x6a, 0x7b, 0x8c, 0x9d }
+    };
+    uint8_t *data;
+    int i, j;
+    
+    array = array_new(sizeof(src[0]), 0);
+    fail_if(NULL == array, "Could not allocate array");
+    
+    for(i=0; i<4; i++)
+    {
+        tmp = array_push_front(array, src[i]);
+        fail_if(NULL  == tmp, "NULL pointer returned");
+        fail_if((i+1) != array_size(tmp), "Invalid element count");
+        
+        data = array_front(tmp);
+        fail_if(NULL == data, "Invalid data pointer");
+        fail_if(memcmp(data, src[i], sizeof(src[i])), "Invalid data");
+        
+        for(j=1; j<=i; j++)
+        {
+            data = array_at(tmp, j);
+            fail_if(NULL == data, "Invalid data pointer");
+            fail_if(memcmp(data, src[i-j], sizeof(src[i-j])), "Invalid data");
+        }
+        
+        array = tmp;
+    }
+    
+    array_delete(array);
+}
+END_TEST
+
+START_TEST(test_array_pop_back)
+{
+    array_t *array, *tmp;
+    uint8_t src[4][6] = 
+    {
+        { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab },
+        { 0xcd, 0xef, 0xf9, 0x87, 0x65, 0x43 },
+        { 0x21, 0x00, 0x0a, 0x1b, 0x2c, 0x3d },
+        { 0x4e, 0x5f, 0x6a, 0x7b, 0x8c, 0x9d }
+    };
+    uint8_t *data;
+    size_t i;
+    
+    array = array_new(sizeof(src[0]), 0);
+    fail_if(NULL == array, "Could not allocate array");
+    
+    for(i=0; i<4; i++)
+    {
+        array = array_push_back(array, src[i]);
+        fail_if(NULL  == array, "Push back failed");
+    }
+    
+    i = array_size(array);
+    do
+    {
+        array_pop_back(array);
+        --i;
+        fail_if(i != array_size(array), "Invalid size");
+        data = array_back(array);
+        if(array_size(array))
+        {
+            fail_if(NULL == data, "Empty array");
+            fail_if(memcmp(data, src[i-1], sizeof(src[i-1])), "Invalid data %d", i-1);
+        }
+        else
+        {
+            fail_unless(NULL == data, "The array should be empty at this point");
+        }
+    }while(array_size(array));
+    
+    array_delete(array);
+}
+END_TEST
+
 Suite* array_suite()
 {
     Suite *suite = suite_create("pceas_array");
@@ -95,6 +179,8 @@ Suite* array_suite()
     tcase_add_test(tcase, test_array_new);
     tcase_add_test(tcase, test_array_push_back);
     tcase_add_test(tcase, test_array_push_back_realloc);
+    tcase_add_test(tcase, test_array_push_front);
+    tcase_add_test(tcase, test_array_pop_back);
     suite_add_tcase(suite, tcase);
     return suite;
 }

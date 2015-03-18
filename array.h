@@ -38,10 +38,20 @@ array_t* array_copy(array_t *src);
 array_t* array_resize(array_t *array, size_t count);
 
 /**
+ * Add element to the end of the array.
+ * @param [in] array   Array.
+ * @param [in] element Pointer to the element to be added.
+ * @return A pointer to the expanded array (@note the pointer might have
+ *         changed) or NULL if an error occured.
  */
 array_t* array_push_back(array_t *array, void* element);
 
 /**
+ * Add element to the beginning of the array.
+ * @param [in] array   Array.
+ * @param [in] element Pointer to the element to be added.
+ * @return A pointer to the expanded array (@note the pointer might have
+ *         changed) or NULL if an error occured.
  */
 array_t* array_push_front(array_t *array, void* element);
 
@@ -62,27 +72,21 @@ void* array_back(array_t *array);
 /**
  * Remove the first element of the array.
  * This can be seen as an alias to array_remove(array, 0);
- * @return 0 if the operation succeeded.
- *         1 if the array is already empty.
  */
-int array_pop_front(array_t *array);
+void array_pop_front(array_t *array);
 
 /**
  * Remove the last element of the array.
  * This can be seen as an alias to array_remove(array, array_size(array)-1);
- * @return 0 if the operation succeeded.
- *         1 if the array is already empty.
  */
-int array_pop_back(array_t *array);
+void array_pop_back(array_t *array);
 
 /**
  * Remove the element at the specified index.
  * @param [in] array Array.
  * @param [in] index Index of the element to remove.
- * @return 0 if the operation succeeded.
- *         1 if the array is already empty, or if the index is out of range.
  */
-int array_remove(array_t *array, size_t index);
+void array_remove(array_t *array, size_t index);
 
 /**
  * 
