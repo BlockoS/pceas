@@ -149,9 +149,14 @@ array_t* array_push_front(array_t *array, void* element)
 }
 
 /**
- * 
+ * Insert element at the specified index.
+ * @param [in] array   Array.
+ * @param [in] index   Index where the element will be copied.
+ * @param [in] element Element to be inserted.
+ * @return A pointer to the expanded array (@note the pointer might have
+ *         changed) or NULL if an error occured.
  */
-array_t *array_insert(array_t *array, size_t index, void* element)
+array_t* array_insert(array_t *array, size_t index, void* element)
 {
     array_impl_t *impl = _array_impl(array);
     if(index > impl->element_count)
@@ -170,6 +175,25 @@ array_t *array_insert(array_t *array, size_t index, void* element)
     memcpy(_array_data(impl, index), element, impl->element_size);
     ++impl->element_count;
     return _array_ptr(impl);
+}
+
+/**
+ * Store a copy of the element at the specified index.
+ * @param [in] array   Array.
+ * @param [in] index   Index where the element will be copied.
+ * @param [in] element Pointer to the element to be inserted.
+ * @return 1 if the element was succesfully copied.
+ *         0 if the index is out of array range.
+ */
+int array_store_at(array_t *array, size_t index, void* element)
+{
+    array_impl_t *impl = _array_impl(array);
+    if(index >= impl->element_count)
+    {
+        return 0;
+    }
+    memcpy(_array_data(impl, index), element, impl->element_size);
+    return 1;
 }
 
 /**
@@ -252,6 +276,7 @@ void array_remove(array_t *array, size_t index)
 }
 
 /**
+ * Empty array.
  */
 void array_clear(array_t *array)
 {

@@ -91,21 +91,21 @@ main(int argc, char **argv)
 	int cd_type;
 	const char *cmd_line_options = "sSl:mhI:";
 	const struct option cmd_line_long_options[] = {
-		{"segment",     0, 0,		's'},
-		{"fullsegment", 0, 0,		'S'},
-		{"listing",	1, 0,		'l'},
-		{"macro",       0, 0, 		'm'},
-		{"raw",		0, &header_opt,  0 },
-		{"cd",		0, &cd_type,	 1 },
-		{"scd",		0, &cd_type,	 2 },
-		{"over",	0, &overlayflag, 1 },
-		{"overlay",	0, &overlayflag, 1 },
-		{"dev",		0, &develo_opt,  1 },
-		{"develo",	0, &develo_opt,  1 },			
-		{"mx",		0, &mx_opt, 	 1 },
-		{"srec",	0, &srec_opt, 	 1 },
-		{"help",	0, 0,		'h'},
-		{0,		0, 0,		 0 }
+		{"segment",     0, 0,            's'},
+		{"fullsegment", 0, 0,            'S'},
+		{"listing",     1, 0,            'l'},
+		{"macro",       0, 0,            'm'},
+		{"raw",         0, &header_opt,   0 },
+		{"cd",          0, &cd_type,      1 },
+		{"scd",         0, &cd_type,      2 },
+		{"over",        0, &overlayflag,  1 },
+		{"overlay",     0, &overlayflag,  1 },
+		{"dev",	        0, &develo_opt,   1 },
+		{"develo",      0, &develo_opt,   1 },
+		{"mx",          0, &mx_opt,       1 },
+		{"srec",        0, &srec_opt,     1 },
+		{"help",        0, 0,            'h'},
+		{0,             0, 0,             0 }
 	};
 
 	/* register atexit callback */

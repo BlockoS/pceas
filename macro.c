@@ -88,7 +88,7 @@ struct t_macro *macro_look(int *ip)
 	struct t_macro *ptr;
 	char name[32];
 	char c;
-	int  hash;
+	unsigned int  hash;
 	int  l;
 
 	/* calculate the symbol hash value and check syntax */
@@ -108,14 +108,12 @@ struct t_macro *macro_look(int *ip)
 		if (l == 31)
 			return (NULL);
 		name[l++] = c;
-		hash += c;
-		hash  = (hash << 3) + (hash >> 5) + c;
 		(*ip)++;
 	}
 	name[l] = '\0';
-	hash &= 0xFF;
 
 	/* browse the hash table */
+    hash = compute_hash(name, l) & 0xff;
 	ptr = macro_tbl[hash];
 	while (ptr) {
 		if (!strcmp(name, ptr->name))
@@ -325,7 +323,7 @@ int
 macro_install(void)
 {
 	char c;
-	int hash = 0;
+	unsigned int hash;
 	int i;
 
 	/* mark the macro name as reserved */
@@ -340,12 +338,7 @@ macro_install(void)
 	*/
 
 	/* calculate symbol hash value */
-	for (i = 1; i <= symbol[0]; i++) {
-		c = symbol[i];
-		hash += c;
-		hash  = (hash << 3) + (hash >> 5) + c;
-	}
-	hash &= 0xFF;
+	hash = compute_hash(&symbol[1], symbol[0]) & 0xFF;
 
 	/* allocate a macro struct */
 	mptr = (void *)malloc(sizeof(struct t_macro));

@@ -265,14 +265,13 @@ oplook(int *idx)
 	char name[16];
 	char c;
 	int flag;
-	int hash;
 	int	i;
+    unsigned int hash;
 
 	/* get instruction name */
 	i = 0;
 	opext = 0;
 	flag = 0;
-	hash = 0;
 
 	for (;;) {
 		c = toupper(prlnbuf[*idx]);
@@ -301,8 +300,6 @@ oplook(int *idx)
 
 		/* store char */
 		name[i++] = c;
-		hash += c;
-		hash  = (hash << 3) + (hash >> 5) + c;
 		(*idx)++;
 
 		/* break if '=' directive */
@@ -324,6 +321,7 @@ oplook(int *idx)
 		return (-2);
 
 	/* search the instruction in the hash table */
+    hash = compute_hash(name, i);
 	ptr = inst_tbl[hash & 0xFF];
 
 	while (ptr) {
@@ -361,8 +359,7 @@ oplook(int *idx)
 void
 addinst(struct t_opcode *optbl)
 {
-	int hash;
-	int len;
+	unsigned int hash;
 	int i;
 	char *ptr;
 	char  c;
@@ -373,16 +370,7 @@ addinst(struct t_opcode *optbl)
 	/* parse list */
 	while (optbl->name) {
 		/* calculate instruction hash value */
-		hash = 0;
-		len  = strlen(optbl->name);
-		ptr  = optbl->name;
-
-		for (i = 0; i < len; i++) {
-			c = *ptr++;
-			hash += c;
-			hash  = (hash << 3) + (hash >> 5) + c;
-		}
-
+        hash  = compute_hash(optbl->name, strlen(optbl->name));
 		hash &= 0xFF;
 
 		/* insert the instruction in the hash table */

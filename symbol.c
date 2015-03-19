@@ -5,7 +5,7 @@
 #include "defs.h"
 #include "externs.h"
 #include "protos.h"
-
+#include "hash.h"
 
 /* ----
  * symhash()
@@ -16,19 +16,7 @@
 int
 symhash(void)
 {
-	int i;
-	char c;
-	int hash = 0;
-
-	/* hash value */
-	for (i = 1; i <= symbol[0]; i++) {
-		c = symbol[i];
-		hash += c;
-		hash  = (hash << 3) + (hash >> 5) + c;
-	}
-
-	/* ok */
-	return (hash & 0xFF);
+	return (compute_hash(&symbol[1], symbol[0]) & 0xFF);
 }
 
 

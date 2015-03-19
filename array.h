@@ -56,8 +56,24 @@ array_t* array_push_back(array_t *array, void* element);
 array_t* array_push_front(array_t *array, void* element);
 
 /**
+ * Insert element at the specified index.
+ * @param [in] array   Array.
+ * @param [in] index   Index where the element will be copied.
+ * @param [in] element Pointer to element to be inserted.
+ * @return A pointer to the expanded array (@note the pointer might have
+ *         changed) or NULL if an error occured.
  */
-array_t *array_insert(array_t *array, size_t index, void* element);
+array_t* array_insert(array_t *array, size_t index, void* element);
+
+/**
+ * Store a copy of the element at the specified index.
+ * @param [in] array   Array.
+ * @param [in] index   Index where the element will be copied.
+ * @param [in] element Pointer to the element to be inserted.
+ * @return 1 if the element was succesfully copied.
+ *         0 if the index is out of array range.
+ */
+int array_store_at(array_t *array, size_t index, void* element); 
 
 /**
  * Returns a pointer to the element at the specified index.
@@ -98,7 +114,7 @@ void array_pop_back(array_t *array);
 void array_remove(array_t *array, size_t index);
 
 /**
- * 
+ * Empty array.
  */
 void array_clear(array_t *array);
 
