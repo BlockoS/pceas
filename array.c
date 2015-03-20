@@ -13,7 +13,8 @@ typedef struct
 
 #define _array_impl(array) ((array_impl_t*)(array))
 #define _array_ptr(impl)   ((array_t*)(impl))
-#define _array_data(impl, index) (((uint8_t*)(impl+1)) + ((index) * (impl)->element_size))
+#define _array_data(impl, index) (((uint8_t*)((impl)+1)) + ((index) * (impl)->element_size))
+
 /**
  * Create a new array of nmemb elements of data, each of size bytes long.
  * @param [in] size   Element size in bytes.

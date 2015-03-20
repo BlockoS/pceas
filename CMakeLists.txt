@@ -25,6 +25,7 @@ set(PROJECT_NAME pceas)
 
 set( pceas_SRC
     array.c
+    list.c
     hash.c
     assemble.c
     code.c
