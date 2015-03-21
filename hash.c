@@ -7,7 +7,7 @@
  * @param [in] len Key length (in bytes).
  * @return Hash value.
  */
-unsigned int compute_hash(void* key, size_t len)
+unsigned int compute_hash(const void* key, size_t len)
 {
     uint8_t *ptr = (uint8_t*)key;
     unsigned int hash;

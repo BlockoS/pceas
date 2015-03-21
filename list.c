@@ -119,7 +119,7 @@ list_t* list_copy(list_t *src)
 }
 
 /* Allocate a single list element. */
-static list_iterator_impl_t* list_alloc(list_impl_t *impl)
+static list_iterator_impl_t* list_alloc(list_impl_t *impl, void *element)
 {
     list_iterator_impl_t *iterator;
     /* Try to recycle list element. */
@@ -141,6 +141,14 @@ static list_iterator_impl_t* list_alloc(list_impl_t *impl)
         iterator = (list_iterator_impl_t*)malloc(sizeof(list_iterator_impl_t) + impl->element_size);
     }
     iterator->next = iterator->previous = NULL;
+    if(NULL != element)
+    {
+        memcpy(_list_iterator_data(iterator), element, impl->element_size);
+    }
+    else
+    {
+        memset(_list_iterator_data(iterator), 0, impl->element_size);
+    }
     return iterator;
 }
 
@@ -153,13 +161,11 @@ static list_iterator_impl_t* list_alloc(list_impl_t *impl)
 int list_push_back(list_t *list, void *element)
 {
     list_impl_t *impl = _list_impl(list);
-    list_iterator_impl_t *iterator = list_alloc(impl);
+    list_iterator_impl_t *iterator = list_alloc(impl, element);
     if(NULL == iterator)
     {
         return -1;
     }
-    
-    memcpy(_list_iterator_data(iterator), element, impl->element_size);
     
     iterator->previous = impl->elements.tail;
     if(NULL != impl->elements.tail)
@@ -184,13 +190,11 @@ int list_push_back(list_t *list, void *element)
 int list_push_front(list_t *list, void *element)
 {
     list_impl_t *impl = _list_impl(list);
-    list_iterator_impl_t *iterator = list_alloc(impl);
+    list_iterator_impl_t *iterator = list_alloc(impl, element);
     if(NULL == iterator)
     {
         return -1;
     }
-    
-    memcpy(_list_iterator_data(iterator), element, impl->element_size);
     
     iterator->next = impl->elements.head;
     if(NULL != impl->elements.head)
@@ -224,13 +228,12 @@ int list_insert(list_t* list, list_iterator_t* iterator, void *element)
         return -1;
     }
     
-    newElement = list_alloc(impl);
+    newElement = list_alloc(impl, element);
     if(NULL == newElement)
     {
         return -1;
     }
     
-    memcpy(_list_iterator_data(newElement), element, impl->element_size);
     newElement->next     = current;
     newElement->previous = current->previous;
     if(NULL != current->previous)

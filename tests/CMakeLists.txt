@@ -13,3 +13,8 @@ add_executable(test_list test_list.c ../list.c)
 target_link_libraries(test_list check)
 
 add_test(test_list ${EXECUTABLE_OUTPUT_PATH}/test_list)
+
+add_executable(test_dict test_dict.c ../dict.c ../hash.c)
+target_link_libraries(test_dict check)
+
+add_test(test_dict ${EXECUTABLE_OUTPUT_PATH}/test_dict)

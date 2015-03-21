@@ -27,6 +27,7 @@ set( pceas_SRC
     array.c
     list.c
     hash.c
+    dict.c
     assemble.c
     code.c
     command.c
