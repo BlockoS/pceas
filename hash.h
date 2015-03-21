@@ -9,6 +9,6 @@
  * @param [in] len Key length (in bytes).
  * @return Hash value.
  */
-unsigned int compute_hash(void* key, size_t len);
+unsigned int compute_hash(const void* key, size_t len);
 
 #endif /* PCEAS_HASH_H */
