@@ -131,8 +131,6 @@ static list_iterator_impl_t* list_alloc(list_impl_t *impl)
         {
             impl->unused.head->previous = NULL;
         }
-        /* If we are using the tail, this means the unused element list
-         * only contains 1 element. */
         if(iterator == impl->unused.tail)
         {
             impl->unused.tail = NULL;
@@ -254,6 +252,7 @@ static void list_remove_internal(list_impl_t *impl, list_iterator_impl_t *iterat
     list_iterator_impl_t *previous = iterator->previous;
     list_iterator_impl_t *next     = iterator->next;
     
+    iterator->next     = NULL;
     iterator->previous = impl->unused.tail;
     if(NULL != impl->unused.tail)
     {
@@ -273,7 +272,6 @@ static void list_remove_internal(list_impl_t *impl, list_iterator_impl_t *iterat
     {
         next->previous = previous;
     }
-    
     if(iterator == impl->elements.head)
     {
         impl->elements.head = next;
