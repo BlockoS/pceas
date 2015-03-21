@@ -26,6 +26,7 @@ typedef struct
 #define _dict_ptr(impl) ((dict_t*)(impl))
 #define _dict_entry_value(impl, entry) ((uint8_t*)((entry)+1))
 #define _dict_entry_key(impl, entry)   ((char*)((uint8_t*)((entry)+1) + impl->element_size))
+
 /**
  * Create dictionary.
  * @param [in] size Element size.
@@ -125,6 +126,34 @@ int dict_add(dict_t *dict, const char* key, const void *value)
     impl->bucket[index] = entry;
     ++impl->element_count;
     return 0;
+}
+
+/**
+ * Add a new entry to the dictionary and return the associated entry.
+ * @param [in] dict  Dictionary.
+ * @param [in] key   Key.
+ * @param [in] value Value.
+ * @return A pointer to the entry or NULL if an error occured.
+ */
+void* dict_add_ex(dict_t *dict, const char* key, const void *value)
+{
+    size_t key_len = strlen(key);
+    unsigned int hash  = compute_hash(key, key_len);
+    unsigned int index = DICT_BUCKET_INDEX(hash);
+    dict_impl_t  *impl  = _dict_impl(dict);
+    dict_entry_t *entry = dict_find_internal(impl, index, key);
+    if(NULL == entry)
+    {
+        entry = dict_create_entry(impl, key, value);
+        if(NULL == entry)
+        {
+            return NULL;
+        }
+        entry->next = impl->bucket[index];
+        impl->bucket[index] = entry;
+        ++impl->element_count;
+    }
+    return _dict_entry_value(impl, entry);
 }
 
 /**

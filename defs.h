@@ -204,9 +204,7 @@ typedef struct t_line {
 } t_line;
 
 typedef struct t_macro {
-	struct t_macro *next;
 	struct t_line *line;
-	char name[SBOLSZ];
 } t_macro;
 
 typedef struct t_func {

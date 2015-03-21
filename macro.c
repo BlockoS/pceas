@@ -15,7 +15,7 @@ int  mcounter, mcntmax;
 int  mcntstack[8];
 struct t_line  *mstack[8];
 struct t_line  *mlptr;
-struct t_macro *macro_tbl[256];
+dict_t* macro_tbl = NULL;
 struct t_macro *mptr;
 
 /* .macro pseudo */
@@ -88,12 +88,10 @@ struct t_macro *macro_look(int *ip)
 	struct t_macro *ptr;
 	char name[32];
 	char c;
-	unsigned int  hash;
 	int  l;
 
 	/* calculate the symbol hash value and check syntax */
 	l = 0;
-	hash = 0;
 	for (;;) {
 		c = prlnbuf[*ip];
 		if (c == '\0' || c == ' ' || c == '\t' || c == ';')
@@ -113,14 +111,7 @@ struct t_macro *macro_look(int *ip)
 	name[l] = '\0';
 
 	/* browse the hash table */
-    hash = compute_hash(name, l) & 0xff;
-	ptr = macro_tbl[hash];
-	while (ptr) {
-		if (!strcmp(name, ptr->name))
-			break;
-		ptr = ptr->next;
-	}
-
+    ptr = (struct t_macro*)dict_find(macro_tbl, name);
 	/* return result */
 	return (ptr);
 }
@@ -322,38 +313,10 @@ macro_getargs(int ip)
 int
 macro_install(void)
 {
-	char c;
-	unsigned int hash;
-	int i;
-
-	/* mark the macro name as reserved */
-	lablptr->type = MACRO;
-
-	/* check macro name syntax */
-	/*
-	if (strchr(&symbol[1], '.')) {
-		error("Invalid macro name!");
-		return (0);
-	}
-	*/
-
-	/* calculate symbol hash value */
-	hash = compute_hash(&symbol[1], symbol[0]) & 0xFF;
-
-	/* allocate a macro struct */
-	mptr = (void *)malloc(sizeof(struct t_macro));
-	if (mptr == NULL) {
-		error("Out of memory!");
-		return (0);
-	}
-
-	/* initialize it */
-	strcpy(mptr->name, &symbol[1]);
-	mptr->line = NULL;
-	mptr->next = macro_tbl[hash];
-	macro_tbl[hash] = mptr;
-	mlptr = NULL;
-
+    struct t_macro entry = {0};
+    entry.line = NULL;
+    mptr = dict_add_ex(macro_tbl, &symbol[1], &entry);
+    mlptr = NULL;
 	/* ok */
 	return (1);
 }

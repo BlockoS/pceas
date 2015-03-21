@@ -31,6 +31,15 @@ void dict_delete(dict_t *dict);
 int dict_add(dict_t *dict, const char* key, const void *value);
 
 /**
+ * Add a new entry to the dictionary and return the associated entry.
+ * @param [in] dict  Dictionary.
+ * @param [in] key   Key.
+ * @param [in] value Value.
+ * @return A pointer to the entry or NULL if an error occured.
+ */
+void* dict_add_ex(dict_t *dict, const char* key, const void *value);
+
+/**
  * Remove entry from the dictionary.
  * @param [in] dict Dictionary.
  * @param [in] key  Entry key.

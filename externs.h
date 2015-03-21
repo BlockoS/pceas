@@ -1,3 +1,5 @@
+#include "dict.h"
+
 extern unsigned char rom[128][8192];
 extern unsigned char map[128][8192];
 extern char bank_name[128][64];
@@ -39,7 +41,8 @@ extern int  mcounter, mcntmax;
 extern int  mcntstack[8];
 extern struct t_line  *mstack[8];
 extern struct t_line  *mlptr;
-extern struct t_macro *macro_tbl[256];
+//extern struct t_macro *macro_tbl[256];
+extern dict_t* macro_tbl;
 extern struct t_macro *mptr;
 extern struct t_func  *func_tbl[256];
 extern struct t_func  *func_ptr;

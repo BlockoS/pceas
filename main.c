@@ -277,10 +277,12 @@ main(int argc, char **argv)
 	/* clear symbol hash tables */
 	for (i = 0; i < 256; i++) {
 		hash_tbl[i]  = NULL;
-		macro_tbl[i] = NULL;
 		func_tbl[i]  = NULL;
 		inst_tbl[i]  = NULL;
 	}
+
+   macro_tbl = dict_new(sizeof(struct t_macro));
+
 
 	/* fill the instruction hash table */
 	addinst(base_inst);
@@ -569,6 +571,8 @@ main(int argc, char **argv)
 	/* dump the bank table */
 	if (dump_seg)
 		show_seg_usage();
+
+    dict_delete(macro_tbl);
 
 	/* ok */
 	return(0);
