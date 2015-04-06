@@ -1,7 +1,7 @@
 #ifndef PCEAS_DICT_H
 #define PCEAS_DICT_H
 
-#include <stdlib.h>
+#include "config.h"
 
 /**
  * Dictionary.
@@ -9,12 +9,27 @@
 typedef struct _dict_t dict_t;
 
 /**
+ * Hash function.
+ */
+typedef uint32_t (*hash_func_t)(const void* key, size_t len);
+
+/**
  * Create dictionary.
+ * The default hash function will be used (eg compute_hash).
  * @param [in] size Element size.
  * @return A pointer to the newly created dictionary or NULL if an error
  *         occured.
  */
 dict_t* dict_new(size_t size);
+
+/**
+ * Create dictionary. The dictionary will use the specified hash function.
+ * @param [in] size      Element size.
+ * @param [in] hash_func Hash function.
+ * @return A pointer to the newly created dictionary or NULL if an error
+ *         occured.
+ */
+dict_t* dict_new_ex(size_t size, hash_func_t hash_func);
 
 /**
  * Delete dictionary.

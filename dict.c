@@ -17,6 +17,7 @@ typedef struct _dict_entry_t
 
 typedef struct
 {
+    hash_func_t   hash;
     dict_entry_t* bucket[DICT_BUCKET_COUNT];
     size_t        element_size;
     size_t        element_count;
@@ -35,11 +36,24 @@ typedef struct
  */
 dict_t* dict_new(size_t size)
 {
+    return dict_new_ex(size, compute_hash);
+}
+
+/**
+ * Create dictionary. The dictionary will use the specified hash function.
+ * @param [in] size      Element size.
+ * @param [in] hash_func Hash function.
+ * @return A pointer to the newly created dictionary or NULL if an error
+ *         occured.
+ */
+dict_t* dict_new_ex(size_t size, hash_func_t hash_func)
+{
     dict_impl_t *impl = (dict_impl_t*)malloc(sizeof(dict_impl_t));
     if(NULL == impl)
     {
         return NULL;
     }
+    impl->hash          = hash_func;
     impl->element_size  = size;
     impl->element_count = 0;
     memset(impl->bucket, 0, DICT_BUCKET_COUNT * sizeof(dict_entry_t*));
@@ -106,10 +120,25 @@ static dict_entry_t* dict_find_internal(dict_impl_t *impl, int index, const char
  */
 int dict_add(dict_t *dict, const char* key, const void *value)
 {
-    size_t key_len = strlen(key);
-    unsigned int hash  = compute_hash(key, key_len);
-    unsigned int index = DICT_BUCKET_INDEX(hash);
-    dict_impl_t  *impl  = _dict_impl(dict);
+    dict_impl_t *impl;
+    size_t       key_len;
+    uint32_t     hash;
+    unsigned int index;
+    
+    impl = _dict_impl(dict);
+    /* Sanity check. */
+    if( (NULL == impl      ) ||
+        (NULL == impl->hash) ||
+        (NULL == key)        ||
+        (NULL == value) )
+    {
+        return 0;
+    }
+    
+    key_len = strlen(key);
+    hash  = impl->hash(key, key_len);
+    index = DICT_BUCKET_INDEX(hash);
+
     dict_entry_t *entry = dict_find_internal(impl, index, key);
     if(NULL != entry)
     {
@@ -137,11 +166,28 @@ int dict_add(dict_t *dict, const char* key, const void *value)
  */
 void* dict_add_ex(dict_t *dict, const char* key, const void *value)
 {
-    size_t key_len = strlen(key);
-    unsigned int hash  = compute_hash(key, key_len);
-    unsigned int index = DICT_BUCKET_INDEX(hash);
-    dict_impl_t  *impl  = _dict_impl(dict);
-    dict_entry_t *entry = dict_find_internal(impl, index, key);
+    dict_impl_t  *impl;
+    size_t        key_len;
+    uint32_t      hash;
+    unsigned int  index;
+    dict_entry_t *entry;
+    
+    impl  = _dict_impl(dict);
+    /* Sanity check. */
+    if( (NULL == impl      ) ||
+        (NULL == impl->hash) ||
+        (NULL == key)        ||
+        (NULL == value) )
+    {
+        return 0;
+    }
+    
+    key_len = strlen(key);
+    hash  = compute_hash(key, key_len);
+    index = DICT_BUCKET_INDEX(hash);
+
+    entry = dict_find_internal(impl, index, key);
+    
     if(NULL == entry)
     {
         entry = dict_create_entry(impl, key, value);
@@ -163,10 +209,22 @@ void* dict_add_ex(dict_t *dict, const char* key, const void *value)
  */
 void dict_remove(dict_t *dict, const char* key)
 {
-    unsigned int hash  = compute_hash(key, strlen(key));
-    unsigned int index = DICT_BUCKET_INDEX(hash);
-    dict_impl_t  *impl = _dict_impl(dict);
+    dict_impl_t  *impl;
+    uint32_t      hash;
+    unsigned int  index;
     dict_entry_t *entry, *previous;
+
+    impl = _dict_impl(dict);
+    /* Sanity check. */
+    if( (NULL == impl      ) ||
+        (NULL == impl->hash) ||
+        (NULL == key))
+    {
+        return;
+    }
+
+    hash  = compute_hash(key, strlen(key));
+    index = DICT_BUCKET_INDEX(hash);
 
     for(previous=NULL, entry=impl->bucket[index]; NULL!=entry; previous=entry, entry=entry->next)
     {
@@ -202,10 +260,23 @@ void dict_remove(dict_t *dict, const char* key)
  */
 void* dict_find(dict_t *dict, const char* key)
 {
-    unsigned int hash  = compute_hash(key, strlen(key));
-    unsigned int index = DICT_BUCKET_INDEX(hash);
-    dict_impl_t  *impl = _dict_impl(dict);
-    dict_entry_t *entry = dict_find_internal(impl, index, key);
+    dict_impl_t  *impl;
+    uint32_t      hash;
+    unsigned int  index;
+    dict_entry_t *entry;
+
+    impl = _dict_impl(dict);
+    /* Sanity check. */
+    if( (NULL == impl      ) ||
+        (NULL == impl->hash) ||
+        (NULL == key))
+    {
+        return;
+    }
+    
+    hash  = compute_hash(key, strlen(key));
+    index = DICT_BUCKET_INDEX(hash);
+    entry = dict_find_internal(impl, index, key);
     if(NULL == entry)
     {
         return NULL;

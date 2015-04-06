@@ -173,6 +173,74 @@ START_TEST(test_dict_remove)
 }
 END_TEST
 
+START_TEST(test_dict_murmur3)
+{
+    dict_t *dict;
+    struct dummy_t* entry;
+    struct dummy_t dummy;
+    int i, err;
+    char buffer[64];
+    
+    dict = dict_new(sizeof(struct dummy_t));
+    fail_if(NULL == dict, "Dictionary allocation failed");
+    
+    for(i=0; i<4; i++)
+    {
+        err = dict_add(dict, key[i], &input[i]);
+        fail_if(err < 0, "Failed to add entry \"%s\"", key[i]);
+    }
+    
+    entry = dict_find(dict, key[1]);
+    fail_if(NULL == entry, "\"%s\" not found", key[1]);
+    fail_if(memcmp(entry, &input[1], sizeof(struct dummy_t)), "Invalid data for \"%s\"", key[1]);
+    
+    for(i=0; i<32768; i++)
+    {
+        dummy.foo[0] = i >> 24;
+        dummy.foo[1] = i >> 16;
+        dummy.foo[2] = i >>  8;
+        dummy.bar    = i ;
+        snprintf(buffer, 64, "%08x", i);
+        err = dict_add(dict, buffer, &dummy);
+        fail_if(err < 0, "Failed to add entry \"%s\"", buffer);
+    }
+    
+    for(i=0; i<32768; i++)
+    {
+        /* el cheapo random */
+        int j = (i & 0xff00) | ((i & 0x0f) << 4) | ((i & 0xf0) >> 4);
+        dummy.foo[0] = j >> 24;
+        dummy.foo[1] = j >> 16;
+        dummy.foo[2] = j >>  8;
+        dummy.bar    = j ;
+        snprintf(buffer, 64, "%08x", j);
+        entry = dict_find(dict, buffer);
+        fail_if(NULL == entry, "\"%s\" not found", buffer);
+        fail_if(memcmp(entry, &dummy, sizeof(struct dummy_t)), "Invalid data for \"%s\"", buffer);
+    }
+    
+    dict_remove(dict, key[3]);
+    
+    for(i=0; i<32768; i+=2)
+    {
+        snprintf(buffer, 64, "%08x", i);
+        dict_remove(dict, buffer);
+    }
+
+    for(i=0; i<32768; i+=2)
+    {
+        snprintf(buffer, 64, "%08x", i);
+        entry = dict_find(dict, buffer);
+        fail_if(NULL != entry, "\"%s\" was not properly removed", buffer);
+    }
+    
+    entry = dict_find(dict, key[3]);
+    fail_if(NULL != entry, "\"%s\" was not properly removed", key[3]);
+    
+    dict_delete(dict);
+}
+END_TEST
+
 Suite* dict_suite()
 {
     Suite *suite = suite_create("pceas");
@@ -180,6 +248,7 @@ Suite* dict_suite()
     tcase_add_test(tcase, test_dict_new);
     tcase_add_test(tcase, test_dict_add);
     tcase_add_test(tcase, test_dict_remove);
+    tcase_add_test(tcase, test_dict_murmur3);
     suite_add_tcase(suite, tcase);
     return suite;
 }
