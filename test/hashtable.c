@@ -40,9 +40,34 @@ int main()
     {
         int j = index[i];
         uint64_t *value = htab_get(tab, test_data[j].key, strlen(test_data[j].key));
-        printf("%0lx %0lx\n", *value, test_data[j].value);
+        if(value)
+        {
+            printf("%s %0lx %0lx\n", test_data[j].key, *value, test_data[j].value);
+        }
+        else
+        {
+            printf("%s not foun\n", test_data[j].key);
+        }
     }
     
+    printf("\n----\n");
+    
+    htab_remove(tab, test_data[5].key, strlen(test_data[5].key));
+    htab_remove(tab, test_data[2].key, strlen(test_data[2].key));
+
+    for(int i=0; i<8; i++)
+    {
+        int j = index[i];
+        uint64_t *value = htab_get(tab, test_data[j].key, strlen(test_data[j].key));
+        if(value)
+        {
+            printf("%s %0lx %0lx\n", test_data[j].key, *value, test_data[j].value);
+        }
+        else
+        {
+            printf("%s not found\n", test_data[j].key);
+        }
+    }
     printf("%p\n", htab_get(tab, "rocket", 5));
     
     htab_destroy(tab);

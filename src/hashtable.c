@@ -1,8 +1,9 @@
 #include <string.h>
 
 #include "hash.h"
+#include "swap.h"
 
-#define INITIAL_BUCKET_COUNT 64
+#define INITIAL_BUCKET_COUNT 2
 
 /** Hash table bucket. **/
 struct bucket_t
@@ -13,8 +14,6 @@ struct bucket_t
     char *key;
     /** Key length. **/
     size_t len;
-    /** Offset in bytes in the data buffer of the key and value. **/
-    off_t offset;
 };
 /**
  * Opaque hash table structure.
@@ -31,6 +30,8 @@ struct htab_t
     uint32_t used;
     /** Size of a single value. **/
     uint32_t size;
+    /** Temporary buffer. */
+    uint8_t *tmp;
 };
 /**
  * Compute probing distance.
@@ -43,6 +44,33 @@ static int htab_distance(struct htab_t *tab, uint32_t pos, uint32_t hash)
     }
     uint32_t original = tab->buckets[pos].hash % tab->capacity;
     return (tab->capacity + pos - original) % tab->capacity;
+}
+/**
+ * Releases memory used by a hash table.
+ * @param [in] Pointer to the hash table to be destroyed.
+ */
+void htab_destroy(struct htab_t* tab)
+{
+    if(tab)
+    {
+        if(tab->buckets)
+        {
+            uint32_t i;
+            for(i=0; i<tab->capacity; i++) /* this can be smarter... */
+            {
+                if(tab->buckets[i].key)
+                {
+                    free(tab->buckets[i].key);
+                }
+            }
+            free(tab->buckets);
+        }
+        if(tab->data)
+        {
+            free(tab->data);
+        }
+        free(tab);
+    }
 }
 /**
  * Creates an empty hash table.
@@ -63,7 +91,7 @@ struct htab_t* htab_create(size_t size)
     tab->buckets = (struct bucket_t*)malloc(tab->capacity * sizeof(struct bucket_t));
     if(NULL == tab->buckets)
     {
-        free(tab);
+        htab_destroy(tab);
         return NULL;
     }
 
@@ -71,33 +99,46 @@ struct htab_t* htab_create(size_t size)
     tab->data = (uint8_t*)malloc(tab->capacity * size);
     if(NULL == tab->data)
     {
-        free(tab->buckets);
-        free(tab);
+        htab_destroy(tab);
         return NULL;
     }
 
     memset(tab->buckets, 0, tab->capacity * sizeof(struct bucket_t));
     memset(tab->data, 0, tab->capacity * size);
+    
+    tab->tmp = (uint8_t*)malloc(size);
+    if(NULL == tab->tmp)
+    {
+        htab_destroy(tab);
+        return NULL;
+    }
     return tab; 
 }
 /**
- * Releases memory used by a hash table.
- * @param [in] Pointer to the hash table to be destroyed.
+ * Retrieves the index of the bucket associated to a given key.
+ * @param [in] tab Hash table.
+ * @param [in] hash Entry hash.
+ * @param [in] key Entry key.
+ * @param [in] len Length of the entry key.
+ * @return index of the matching bucket or UINT32_MAX if there is no matching entry.
  */
-void htab_destroy(struct htab_t* tab)
+uint32_t htab_index(struct htab_t* tab, uint32_t hash, const char* key, int len)
 {
-    if(tab)
+    uint32_t i;
+    for(i=0; i<tab->capacity; i++)
     {
-        if(tab->buckets)
+        uint32_t pos = (hash + i) % tab->capacity;
+        int distance = htab_distance(tab, pos, hash);
+        if((NULL == tab->buckets[pos].key) || (i > distance))
         {
-            free(tab->buckets);
+            return UINT32_MAX;
         }
-        if(tab->data)
+        else if((len == tab->buckets[pos].len) && (0 == memcmp(key, tab->buckets[pos].key, len)))
         {
-            free(tab->data);
+            return pos;
         }
-        free(tab);
     }
+    return UINT32_MAX;
 }
 /**
  * Retrieves the entry associated to a given key.
@@ -110,34 +151,25 @@ void htab_destroy(struct htab_t* tab)
 void* htab_get(struct htab_t* tab, const char* key, size_t len)
 {
     uint32_t hash = elf_hash(key, len);
-    uint32_t i;
-    for(i=0; i<tab->capacity; i++)
+    uint32_t pos = htab_index(tab, hash, key, len);
+    if(UINT32_MAX == pos)
     {
-        uint32_t pos = (hash + i) % tab->capacity;
-        int distance = htab_distance(tab, pos, hash);
-        if((NULL == tab->buckets[pos].key) || (i > distance))
-        {
-            return NULL;
-        }
-        else if((len == tab->buckets[pos].len) && (0 == memcmp(key, tab->buckets[pos].key, len)))
-        {
-            return tab->data + (tab->buckets[pos].offset * tab->size);
-        }
+        return NULL;
     }
-    return NULL;
+    return tab->data + (pos * tab->size);
 }
 /**
  * Insert bucket into the hash table.
  */
-static void htab_insert(struct htab_t* tab, struct bucket_t *bucket)
+static void htab_insert(struct htab_t* tab, struct bucket_t *bucket, uint8_t *data)
 {
     int probe = 0;
     uint32_t i;
     
-    for(i=0; i<tab->capacity; i++, probe++)
+    uint32_t pos = bucket->hash % tab->capacity;
+    for(i=0; i<tab->capacity; i++, probe++, pos=(pos+1)%tab->capacity)
     {
-        uint32_t pos = (bucket->hash + i) % tab->capacity;
-        if(tab->buckets[pos].len)
+        if(tab->buckets[pos].key)
         {
             int distance = htab_distance(tab, pos, bucket->hash);
             if(probe > distance)
@@ -145,12 +177,16 @@ static void htab_insert(struct htab_t* tab, struct bucket_t *bucket)
                 struct bucket_t tmp = tab->buckets[pos];
                 tab->buckets[pos] = *bucket;
                 *bucket = tmp;
+                
+                swap(tab->data + (pos*tab->size), data, tab->size);
+                
                 probe = distance;
             }
         }
         else
         {
             tab->buckets[pos] = *bucket;
+            memcpy(tab->data + (pos*tab->size), data, tab->size);
             break;
         }
     }
@@ -160,35 +196,43 @@ static void htab_insert(struct htab_t* tab, struct bucket_t *bucket)
  */
 static int htab_grow(struct htab_t* tab)
 {
-    struct bucket_t *old;
-    struct bucket_t *tmp;
+    struct bucket_t *buckets;
+    uint8_t *data;
+    uint32_t capacity;
     
-    uint32_t new_capacity = tab->capacity * 2;
-    uint8_t *data = (uint8_t*)realloc(tab->data, new_capacity * tab->size);
+    uint32_t old_capacity = tab->capacity;
+    uint8_t *old_data = tab->data;
+    struct bucket_t *old_buckets = tab->buckets;
+
+    capacity = tab->capacity * 2;
+    data = (uint8_t*)malloc(capacity * tab->size);
     if(NULL == data)
     {
         // [todo] error value
         return 1;
     }
-    tab->data = data;
     
-    old = tab->buckets;
-    tmp = (struct bucket_t*)malloc(new_capacity * sizeof(struct bucket_t));
-    if(NULL == tmp)
+    buckets = (struct bucket_t*)malloc(capacity * sizeof(struct bucket_t));
+    if(NULL == buckets)
     {
         // [todo] error value
+        free(data);
         return 1;
     }
-    tab->buckets = tmp;
-    tab->capacity = new_capacity;
-    memset(tab->buckets, 0, tab->capacity * sizeof(struct bucket_t));
-    for(uint32_t i=0; i<tab->capacity; i++)
+    memset(buckets, 0, capacity * sizeof(struct bucket_t));
+
+    tab->capacity = capacity;
+    tab->buckets = buckets;
+    tab->data = data;
+    for(uint32_t i=0; i<old_capacity; i++)
     {
-        if(old[i].key)
+        if(old_buckets[i].key)
         {
-            htab_insert(tab, &old[i]);
+            htab_insert(tab, &old_buckets[i], &old_data[i*tab->size]);
         }
     }
+    free(old_data);
+    free(old_buckets);
     return 0;
 }
 /**
@@ -214,7 +258,6 @@ int htab_add(struct htab_t* tab, const char* key, size_t len, void* element)
     memcpy(bucket.key, key, len);
     bucket.hash   = hash;
     bucket.len    = len;
-    bucket.offset = tab->used;
     
     if(tab->used == tab->capacity)
     {
@@ -226,10 +269,9 @@ int htab_add(struct htab_t* tab, const char* key, size_t len, void* element)
         }
     }
     
-    memcpy(tab->data + (bucket.offset*tab->size), element, tab->size);
-    
     tab->used++;
-    htab_insert(tab, &bucket);
+    memcpy(tab->tmp, element, tab->size);
+    htab_insert(tab, &bucket, tab->tmp);
     
     return 0;
 }
@@ -242,6 +284,43 @@ int htab_add(struct htab_t* tab, const char* key, size_t len, void* element)
  */
 int htab_remove(struct htab_t* tab, const char* key, size_t len)
 {
-    // [todo]
-    return 1; 
+    uint32_t i;
+    uint32_t hash = elf_hash(key, len);
+    uint32_t pos = htab_index(tab, hash, key, len);
+    if(UINT32_MAX == pos)
+    {
+        // [todo] error value
+        return 1;
+    }
+    
+    for(i=1; i<tab->capacity; i++)
+    {
+        struct bucket_t bucket;
+        int distance;
+        uint32_t next = (pos + 1) % tab->capacity;
+        if(NULL == tab->buckets[next].key)
+        {
+            break;
+        }
+        distance = htab_distance(tab, next, hash);
+        if(0 == distance)
+        {
+            break;
+        }
+        
+        bucket = tab->buckets[next];
+        tab->buckets[next] = tab->buckets[pos];
+        tab->buckets[pos]  = bucket;
+        
+        swap(tab->data + (pos*tab->size), tab->data + (next*tab->size), tab->size);
+
+        pos = next;
+    }
+    if(tab->buckets[pos].key)
+    {
+        free(tab->buckets[pos].key);
+    }
+    memset(tab->buckets + pos, 0, sizeof(struct bucket_t));
+    memset(tab->data + (pos*tab->size), 0, tab->size);
+    return 0; 
 }
