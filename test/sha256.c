@@ -2,11 +2,64 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "sha256.h"
+#include <sha256.h>
 
-// [todo] unit test lib
+#include <munit.h>
 
-int main()
+MunitResult million_a_test(const MunitParameter params[], void* user_data_or_fixture)
+{
+    const uint8_t million_a[32] = 
+    {
+        0xcd,0xc7,0x6e,0x5c,0x99,0x14,0xfb,0x92,
+        0x81,0xa1,0xc7,0xe2,0x84,0xd7,0x3e,0x67,
+        0xf1,0x80,0x9a,0x48,0xa4,0x97,0x20,0x0e,
+        0x04,0x6d,0x39,0xcc,0xc7,0x11,0x2c,0xd0
+    };
+    uint8_t digest[32]; 
+    struct sha256_t ctx;
+    
+    (void)params, (void)user_data_or_fixture;
+    
+    sha256_init(&ctx);
+    for(int i=0; i<1000000; i++)
+    {
+        uint8_t byte = 'a';
+        sha256_add(&ctx, &byte, 1); 
+    }
+    sha256_finalize(&ctx, digest);
+    
+    munit_assert_memory_equal(32, digest, million_a);    
+    return MUNIT_OK;
+}
+
+MunitResult large_message_test(const MunitParameter params[], void* user_data_or_fixture)
+{
+    const char *msg = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno";
+    
+    const uint8_t large_message[32] = 
+    {
+        0x50,0xe7,0x2a,0x0e,0x26,0x44,0x2f,0xe2,
+        0x55,0x2d,0xc3,0x93,0x8a,0xc5,0x86,0x58,
+        0x22,0x8c,0x0c,0xbf,0xb1,0xd2,0xca,0x87,
+        0x2a,0xe4,0x35,0x26,0x6f,0xcd,0x05,0x5e
+    };
+    uint8_t digest[32];
+    struct sha256_t ctx;
+
+    (void)params, (void)user_data_or_fixture;
+
+    sha256_init(&ctx);
+    for(uint64_t i=0; i<16777216; i++)
+    {
+        sha256_add(&ctx, msg, strlen(msg));
+    }
+    sha256_finalize(&ctx, digest);
+   
+    munit_assert_memory_equal(32, digest, large_message);
+    return MUNIT_OK;
+}
+
+MunitResult short_message_test(const MunitParameter params[], void* user_data_or_fixture)
 {
     struct 
     {
@@ -40,75 +93,31 @@ int main()
              0xaf,0xac,0x45,0x03,0x7a,0xfe,0xe9,0xd1 }
         }
     };
-    
-    uint8_t million_a[32] = 
-    {
-        0xcd,0xc7,0x6e,0x5c,0x99,0x14,0xfb,0x92,
-        0x81,0xa1,0xc7,0xe2,0x84,0xd7,0x3e,0x67,
-        0xf1,0x80,0x9a,0x48,0xa4,0x97,0x20,0x0e,
-        0x04,0x6d,0x39,0xcc,0xc7,0x11,0x2c,0xd0
-    };
-    
-    char *msg = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno";
-    uint8_t large_message[32] = 
-    {
-        0x50,0xe7,0x2a,0x0e,0x26,0x44,0x2f,0xe2,
-        0x55,0x2d,0xc3,0x93,0x8a,0xc5,0x86,0x58,
-        0x22,0x8c,0x0c,0xbf,0xb1,0xd2,0xca,0x87,
-        0x2a,0xe4,0x35,0x26,0x6f,0xcd,0x05,0x5e
-    };
-    
     uint8_t digest[32];
-    struct sha256_t ctx;
+
+    (void)params, (void)user_data_or_fixture;
 
     for(int i=0; i<4; i++)
     {
         sha256_digest(test_data[i].data, strlen(test_data[i].data), digest);
-        for(int j=0; j<4; j++)
-        {
-            for(int k=0; k<8; k++)
-            {
-                printf("%02x:%02x ", test_data[i].digest[(8*j)+k], digest[(8*j)+k]);
-            }
-            printf("\n");
-        }
-        printf("\n");
+        munit_assert_memory_equal(32, digest, test_data[i].digest);
     }
-    
-    sha256_init(&ctx);
-    for(int i=0; i<1000000; i++)
-    {
-        uint8_t byte = 'a';
-        sha256_add(&ctx, &byte, 1); 
-    }
-    sha256_finalize(&ctx, digest);
-    
-    for(int j=0; j<4; j++)
-    {
-        for(int k=0; k<8; k++)
-        {
-            printf("%02x:%02x ", million_a[(8*j)+k], digest[(8*j)+k]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-    
-    sha256_init(&ctx);
-    for(uint64_t i=0; i<16777216; i++)
-    {
-        sha256_add(&ctx, msg, strlen(msg));
-    }
-    sha256_finalize(&ctx, digest);
+    return MUNIT_OK;
+}
 
-    for(int j=0; j<4; j++)
-    {
-        for(int k=0; k<8; k++)
-        {
-            printf("%02x:%02x ", large_message[(8*j)+k], digest[(8*j)+k]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-    
-    return EXIT_SUCCESS;
+MunitTest sha256_tests[] =
+{
+    { "/Short message test", short_message_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/Million messages test", million_a_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/Large message test", large_message_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
+};
+
+static const MunitSuite sha256_suite = {
+  "/sha256", sha256_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
+};
+
+int main(int argc, char **argv)
+{
+    return munit_suite_main(&sha256_suite, NULL, argc, argv);
 }

@@ -4,7 +4,7 @@
 #define SWAP_BUFFER_SIZE 32
 
 /**
- *
+ * Swaps @b size bytes from the memory location pointed by @b a with @b b.
  */
 void swap(uint8_t* a, uint8_t *b, uint32_t len)
 {

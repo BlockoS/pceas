@@ -1,6 +1,10 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.2)
 
 project(pceas)
+
+include(ExternalProject)
+
+enable_testing()
 
 # Force build type to Debug if none was specified.
 if(NOT CMAKE_BUILD_TYPE)
@@ -46,4 +50,11 @@ configure_file(
     ${PROJECT_SOURCE_DIR}/version.h
 )
 
+include_directories( ${PROJECT_SOURCE_DIR}/include )
+
+add_library( munit STATIC ${PROJECT_SOURCE_DIR}/externals/munit/munit.c )
+
+add_subdirectory( ${PROJECT_SOURCE_DIR}/test ) 
+
 add_executable( ${PROJECT_NAME} ${pceas_SRC} )
+
