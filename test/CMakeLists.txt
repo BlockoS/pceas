@@ -18,3 +18,7 @@ add_test( hashtable ${EXECUTABLE_OUTPUT_PATH}/hashtable_test )
 add_executable( readline_test readline.c ${PROJECT_SOURCE_DIR}/src/readline.c )
 target_link_libraries( readline_test munit)
 add_test( readline ${EXECUTABLE_OUTPUT_PATH}/readline_test )
+
+add_executable( string_utils_test stringutils.c ${PROJECT_SOURCE_DIR}/src/stringutils.c )
+target_link_libraries( string_utils_test munit)
+add_test( string_utils ${EXECUTABLE_OUTPUT_PATH}/string_utils_test )
