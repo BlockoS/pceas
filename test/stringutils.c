@@ -109,6 +109,45 @@ MunitResult goto_eol_test(const MunitParameter params[], void* user_data)
     return MUNIT_OK;
 }
 
+MunitResult goto_space_test(const MunitParameter params[], void* user_data)
+{
+    const char *input[] = 
+    {
+        "string   ",
+        "abcd\t efg",
+        "nospaces",
+        "    \t\t___",
+        ""
+    };
+
+    const char *start, *end, *ptr;
+
+    start = input[0]; end = start + strlen(start);
+    ptr = goto_space(start, end);
+    munit_assert_char(ptr[0], ==, ' ');
+    munit_assert_ptr_not_equal(ptr, end);
+
+    start = input[1]; end = start + strlen(start);
+    ptr = goto_space(start, end);
+    munit_assert_char(ptr[0], ==, '\t');
+    munit_assert_ptr_not_equal(ptr, end);
+
+    start = input[2]; end = start + strlen(start);
+    ptr = goto_space(start, end);
+    munit_assert_ptr_equal(ptr, end);
+
+    start = input[3]; end = start + strlen(start);
+    ptr = goto_space(start, end);
+    munit_assert_char(ptr[0], ==, ' ');
+    munit_assert_ptr_equal(ptr, start);
+
+    start = input[4]; end = start + strlen(start);
+    ptr = goto_space(start, end);
+    munit_assert_ptr_equal(ptr, end);
+
+    return MUNIT_OK;
+}
+
 MunitResult next_line_test(const MunitParameter params[], void* user_data)
 {
     const char *input[] = 
@@ -193,11 +232,94 @@ MunitResult next_line_test(const MunitParameter params[], void* user_data)
     return MUNIT_OK;
 }
 
+MunitResult quoted_string_test(const MunitParameter params[], void* user_data)
+{
+    const char *input[] = 
+    {
+        "'abcdefg\n012345' ",
+        "\"    __//\"  ",
+        "\'quoted\\'char\' ",
+        "'missing    ",
+        "\"missing   ",
+        "'mismatch\" ",
+        "@no string",
+        ""
+    };
+
+    const char *start, *end, *ptr;
+
+    start = input[0]; end = start + strlen(start);
+    ptr = skip_quoted_string(start, end);
+    munit_assert_ptr_not_equal(ptr, end);
+    munit_assert_char(ptr[-1], ==, '\'');
+
+    start = input[1]; end = start + strlen(start);
+    ptr = skip_quoted_string(start, end);
+    munit_assert_ptr_not_equal(ptr, end);
+    munit_assert_char(ptr[-1], ==, '\"');
+
+    start = input[2]; end = start + strlen(start);
+    ptr = skip_quoted_string(start, end);
+    munit_assert_ptr_not_equal(ptr, end);
+    munit_assert_char(ptr[-1], ==, '\'');
+
+    start = input[3]; end = start + strlen(start);
+    ptr = skip_quoted_string(start, end);
+    munit_assert_ptr_equal(ptr, end);
+
+    start = input[4]; end = start + strlen(start);
+    ptr = skip_quoted_string(start, end);
+    munit_assert_ptr_equal(ptr, end);
+
+    start = input[5]; end = start + strlen(start);
+    ptr = skip_quoted_string(start, end);
+    munit_assert_ptr_equal(ptr, end);
+
+    start = input[6]; end = start + strlen(start);
+    ptr = skip_quoted_string(start, end);
+    munit_assert_ptr_equal(ptr, end);
+    
+    return MUNIT_OK;
+}
+
+MunitResult simple_parse_test(const MunitParameter params[], void* user_data)
+{
+    char *line = 
+    "   label:  lda    #$00\n"
+    "           inc    A\n"
+    "           bne    label\n"
+    "           rts\n";
+    
+    const char *start, *end, *ptr;
+    const char *eol;
+    
+    start = line; 
+    end   = start + strlen(start);
+    
+    ptr = start;
+    while(ptr != end) {
+        int i;
+        eol = goto_eol(ptr, end);
+        while(ptr != eol) {
+            ptr = skip_spaces(ptr, eol);
+            
+            while((ptr<eol) && (!isspace(*ptr))) {
+                ++ptr;
+            }
+        }
+        ptr = next_line(eol, end);
+    }    
+    return MUNIT_OK;
+}
+
 MunitTest string_utils_tests[] =
 {
     { "/strip test", strip_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
     { "/go to end of line test", goto_eol_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/go to space test", goto_space_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
     { "/next line test", next_line_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/quoted string test", quoted_string_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/simple parse test", simple_parse_test, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
