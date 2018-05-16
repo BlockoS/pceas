@@ -12,4 +12,12 @@
  */
 uint32_t elf_hash(const char* key, size_t len); 
 
+/**
+ * Update current hash.
+ * @param [in] c    Input character.
+ * @param [in] hash Current hash value.
+ * @return Updated hash value.
+ */
+uint32_t elf_hash_update(char c, uint32_t hash);
+
 #endif /* PCEAS_HASH_H */

@@ -55,6 +55,7 @@ include_directories( ${PROJECT_SOURCE_DIR}/include )
 add_library( munit STATIC ${PROJECT_SOURCE_DIR}/externals/munit/munit.c )
 
 add_subdirectory( ${PROJECT_SOURCE_DIR}/test ) 
+add_subdirectory( ${PROJECT_SOURCE_DIR}/tools ) 
 
 add_executable( ${PROJECT_NAME} ${pceas_SRC} )
 
