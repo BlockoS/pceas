@@ -47,3 +47,5 @@ configure_file(
 )
 
 add_executable( ${PROJECT_NAME} ${pceas_SRC} )
+
+install( TARGETS ${PROJECT_NAME} DESTINATION bin )
