@@ -59,3 +59,4 @@ add_subdirectory( ${PROJECT_SOURCE_DIR}/tools )
 
 add_executable( ${PROJECT_NAME} ${pceas_SRC} )
 
+install(TARGETS ${PROJECT_NAME} DESTINATION bin )
