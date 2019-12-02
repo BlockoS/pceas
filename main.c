@@ -39,11 +39,11 @@
 
 /* variables */
 unsigned char ipl_buffer[4096];
-char   in_fname[128];	/* file names, input */
-char  out_fname[128];	/* output */
-char  bin_fname[128];	/* binary */
-char  lst_fname[128];	/* listing */
-char  sym_fname[128];	/* symbol table */
+char   in_fname[256];	/* file names, input */
+char  out_fname[256];	/* output */
+char  bin_fname[256];	/* binary */
+char  lst_fname[256];	/* listing */
+char  sym_fname[256];	/* symbol table */
 char  zeroes[2048];	/* CDROM sector full of zeores */
 char *prg_name;	/* program name */
 FILE *in_fp;	/* file pointers, input */
@@ -89,7 +89,7 @@ main(int argc, char **argv)
 	int file;
 	int ram_bank;
 	int cd_type;
-	const char *cmd_line_options = "sSl:mhI:";
+	const char *cmd_line_options = "sSl:mhI:o:";
 	const struct option cmd_line_long_options[] = {
 		{"segment",     0, 0,		's'},
 		{"fullsegment", 0, 0,		'S'},
@@ -145,6 +145,8 @@ main(int argc, char **argv)
 	file = 0;
 	cd_type = 0;
 	
+    memset(out_fname, 0, 256);
+
 	/* display assembler version message */
 	printf("%s\n\n", machine->asm_title);
 	
@@ -180,7 +182,11 @@ main(int argc, char **argv)
 					return 0;
 				}
 				break;
-				
+			
+            case 'o':
+                strcpy(out_fname, optarg);
+                break;
+
 			case 'h':
 				help();
 				return 0;
@@ -239,19 +245,24 @@ main(int argc, char **argv)
 	}
 
 	/* auto-add file extensions */
-	strcpy(out_fname, in_fname);
 	strcpy(bin_fname, in_fname);
 	strcpy(lst_fname, in_fname);
 	strcpy(sym_fname, in_fname);
-	strcat(lst_fname, ".lst");
-	strcat(sym_fname, ".sym");
+	strcat(lst_fname, ".lst");  // [todo]
+	strcat(sym_fname, ".sym");  // [todo]
 
-	if (overlayflag == 1)
-		strcat(bin_fname, ".ovl");
-	else if (cd_opt || scd_opt)
-		strcat(bin_fname, ".iso");
-	else
-		strcat(bin_fname, machine->rom_ext);
+    if(out_fname[0]) {
+        strcpy(bin_fname, out_fname);
+    }
+    else {
+        strcpy(bin_fname, in_fname);
+        if (overlayflag == 1)
+            strcat(bin_fname, ".ovl");
+        else if (cd_opt || scd_opt)
+            strcat(bin_fname, ".iso");
+        else
+            strcat(bin_fname, machine->rom_ext);
+    }
 
 	if (p)
 	   *p = '.';
