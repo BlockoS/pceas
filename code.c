@@ -591,14 +591,8 @@ getoperand(int *ip, int flag, int last_char)
 
 		case '[':
 			/* indirect */
-			mode = ZP_IND | ZP_IND_X | ZP_IND_Y;
+			mode = ABS_IND | ABS_IND_X | ZP_IND | ZP_IND_X | ZP_IND_Y;
 			(*ip)++;
-			if(prlnbuf[*ip] == '<') {
-				(*ip)++;
-			}
-			else {
-			       	mode |= ABS_IND | ABS_IND_X;
-			}
 			break;
 
 		default:
